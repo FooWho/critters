@@ -22,8 +22,9 @@ class Condition(ASTNode):
 
 class Command(ASTNode):
 
-    def __init__(self, root: Optional[Program] = None) -> None:
+    def __init__(self, root: Optional[Program] = None, children: Optional[Update | UpdateOrAction] = None) -> None:
         self.root: Optional[Program] = root
+        self.children: Optional[Update | UpdateOrAction] = children
 
 class Update(ASTNode):
     pass

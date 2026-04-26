@@ -3,6 +3,13 @@ import re
 class Lexer():
 
     patterns = {
+        "T_MEMSIZE": r"MEMSIZE|mem\[0\]", 
+        "T_DEFENSE": r"DEFENSE|mem\[1\]",
+        "T_OFFENSE": r"OFFENSE|mem\[2\]",
+        "T_SIZE": r"SIZE|mem\[3\]",
+        "T_ENERGY": r"ENERGY|mem\[4\]",
+        "T_PASS": r"PASS|mem\[5\]",
+        "T_POSTURE": r"POSTURE|mem\[6\]",
         "T_COMM": r"-->",
         "T_ASSIGN": r":=",
         "T_LEQU": r"<=",
