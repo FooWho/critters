@@ -1,12 +1,12 @@
-from scanner import Scanner
+from lexer import Lexer
 
 def main():
-    my_scanner = Scanner()
-    tokens = my_scanner.emit_tokens("ahead[3] < -15 and ahead[1] = 0 --> forward;")
+    lexer = Lexer()
+    tokens = lexer.emit_tokens("ahead[3] < -15 and ahead[1] = 0 --> forward;")
     for token in tokens:
         print(f'Got: {token}')
 
-    lexemes = my_scanner.emit_lexemes("ahead[3] < -15 and ahead[1] = 0 --> forward;")
+    lexemes = lexer.emit_lexemes("ahead[3] < -15 and ahead[1] = 0 --> forward;")
     for lexeme in lexemes:
         print(f'Got: {lexeme}')
 

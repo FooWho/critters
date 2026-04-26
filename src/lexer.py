@@ -1,5 +1,6 @@
 import re
-class Scanner():
+
+class Lexer():
 
     patterns = {
         "T_COMM": r"-->",
@@ -45,9 +46,6 @@ class Scanner():
     def __init__(self):
         self.combined_pattern = "|".join([f'(?P<{name}>{pattern})' for name, pattern in self.patterns.items()])
         self.compiled_pattern = re.compile(self.combined_pattern)
-        self.pattern_dictionary = {}
-        #for st in StringTerminals:
-        #    self.pattern_dictionary.update({st.value: st.name})
 
     def emit_tokens(self, loc:str) -> list[str] :
         tokens = []
