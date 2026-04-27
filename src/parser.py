@@ -1,14 +1,27 @@
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, ClassVar, Iterable
 
 class ASTNode():
-    pass
+    _children: ClassVar[tuple[str, ...]] = ()
+    
+    def __iter__(self) -> Iterable[ASTNode]:
+        for fieldName in self._children:
+            value = getattr(self, fieldName, None)
+            if isinstance(value, list):
+                yield from (item for item in value 
+                            if isinstance(item, ASTNode))
+            elif isinstance(value, ASTNode):
+                yield value
+
+    
+
 
 class Program(ASTNode):
+    _children: ClassVar[tuple[str, ...]] = ('rules',)
+
     
-    def __init__(self, children: list[Rule] = []) -> None:
-        self.rootNode: Program = self
-        self.children: list[Rule] = children
+    def __init__(self, rules: list[Rule] = []) -> None:
+        self.rules: list[Rule] = rules
 
 class Rule(ASTNode):
     
@@ -22,7 +35,8 @@ class Condition(ASTNode):
 
 class Command(ASTNode):
 
-    def __init__(self, root: Optional[Program] = None, children: Optional[Update | UpdateOrAction] = None) -> None:
+    def __init__(self, root: Optional[Program] = None, 
+                 children: Optional[Update | UpdateOrAction] = None) -> None:
         self.root: Optional[Program] = root
         self.children: Optional[Update | UpdateOrAction] = children
 
@@ -32,6 +46,9 @@ class Update(ASTNode):
 class UpdateOrAction(ASTNode):
     pass
 
+class Relation(ASTNode):
 
+    def __init__(self, root: Optional[Program] = None) -> None:
+        pass
 
 

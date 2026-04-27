@@ -1,4 +1,15 @@
 import re
+from typing import NamedTuple, Iterator
+
+class Token(NamedTuple):
+    tokenType: str|None
+    lexeme: str
+    line: int
+    column: int
+
+class TokenLexeme(NamedTuple):
+    tokenType: str|None
+    lexeme: str
 
 class Lexer():
 
@@ -10,6 +21,7 @@ class Lexer():
         "T_ENERGY": r"ENERGY|mem\[4\]",
         "T_PASS": r"PASS|mem\[5\]",
         "T_POSTURE": r"POSTURE|mem\[6\]",
+        "T_COMMENT": r"//.*\n*",
         "T_COMM": r"-->",
         "T_ASSIGN": r":=",
         "T_LEQU": r"<=",
@@ -47,24 +59,53 @@ class Lexer():
         "T_L_BRACE": r"\{",
         "T_R_BRACE": r"\}",
         "T_SEMICOLON": r";",
-        "T_NUMBER": r"\d+"
+        "T_NUMBER": r"\d+",
+        "T_WS": r"\s",
+        "T_MISMATCH": r"."  
     }
 
     def __init__(self):
-        self.combined_pattern = "|".join([f'(?P<{name}>{pattern})' for name, pattern in self.patterns.items()])
-        self.compiled_pattern = re.compile(self.combined_pattern)
+        self.combinedPattern = "|".join([f'(?P<{name}>{pattern})' for name, pattern in self.patterns.items()])
+        self.compiledPattern = re.compile(self.combinedPattern)
 
-    def emit_tokens(self, loc:str) -> list[str] :
-        tokens = []
-        for match in self.compiled_pattern.finditer(loc):
-            tokens.append(match.lastgroup)
-        return tokens
+    def tokenize(self, code: str) -> Iterator[Token]:
+        tokenType: str|None = None
+        lexeme: str = ""
+        lineNumber:int = 1
+        column: int = 0
 
+        lineStart: int = 0
+        for tc in self.compiledPattern.finditer(code):
+            tokenType = tc.lastgroup
+            lexeme = tc.group()
+            column = tc.start() - lineStart
+
+            if tokenType == "T_WS":
+                if "\n" in lexeme:
+                    lineNumber += lexeme.count("\n")
+                    lineStart = tc.end()
+                    continue
+            elif tokenType == "T_COMMENT":
+                    lineNumber += lexeme.count("\n")
+                    lineStart = tc.end()
+            elif tokenType == "T_MISMATCH":
+                print(f'Unexpected character {lexeme!r} on line {lineNumber}')
+                #raise SyntaxtError(f'Unexpected character {lexeme!r} on line {lineNumber}')
+            yield Token(tokenType, lexeme, lineNumber, column)
+
+
+    def emitTokens(self, loc: str) -> list[str|None] :
+        matches = self.compiledPattern.finditer(loc)
+        return [match.lastgroup for match in matches]
     
-    def emit_lexemes(self, loc:str) -> list[str] :
-        tokens = []
-        matches = self.compiled_pattern.finditer(loc)
+    def emitLexemes(self, loc: str) -> list[str] :
+        matches = self.compiledPattern.finditer(loc)
         return [match.group() for match in matches]
+    
+    def emitLexemeTokenPair(self, loc: str) -> list[TokenLexeme]:
+        matches = self.compiledPattern.finditer(loc)
+        return [TokenLexeme(match.lastgroup, match.group()) for match in matches]
+
 
 
 
