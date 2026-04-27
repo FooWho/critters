@@ -3,5 +3,5 @@ name = "critters"
 version = "0.1.0"
 description = "Part 1 of the Cornell University CS2112 Critter World Project"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = []

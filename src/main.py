@@ -1,5 +1,6 @@
 import sys
-from lexer import Lexer
+from typing import Iterator
+from lexer import Lexer, CritterParseError, Token
 
 def main(args: list[str]):
     lexer = Lexer()
@@ -11,10 +12,15 @@ def main(args: list[str]):
     #for lexeme in lexemes:
     #    print(f'Got: {lexeme}')
 
+    tokens: Iterator[Token] = iter([])
     with open('program.ctl') as f:
-        tokens = lexer.tokenize(f.read())
-    for token in tokens:
-        print(f'{token}')
+        source: str = f.read()
+        tokens = lexer.tokenize(source)
+    try:
+        for token in tokens:
+            print(f'{token}')
+    except CritterParseError as e:
+        print(e)
 
 
 if __name__ == "__main__":

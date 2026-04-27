@@ -1,15 +1,6 @@
 import re
-from typing import NamedTuple, Iterator
-
-class Token(NamedTuple):
-    tokenType: str|None
-    lexeme: str
-    line: int
-    column: int
-
-class TokenLexeme(NamedTuple):
-    tokenType: str|None
-    lexeme: str
+from typing import Iterator
+from schemas import Token, TokenLexeme, CritterParseError
 
 class Lexer():
 
@@ -21,7 +12,7 @@ class Lexer():
         "T_ENERGY": r"ENERGY|mem\[4\]",
         "T_PASS": r"PASS|mem\[5\]",
         "T_POSTURE": r"POSTURE|mem\[6\]",
-        "T_COMMENT": r"//.*\n*",
+        "T_COMMENT": r"//.*",
         "T_COMM": r"-->",
         "T_ASSIGN": r":=",
         "T_LEQU": r"<=",
@@ -61,7 +52,8 @@ class Lexer():
         "T_SEMICOLON": r";",
         "T_NUMBER": r"\d+",
         "T_WS": r"\s",
-        "T_MISMATCH": r"."  
+        "T_EOF": r"\Z",
+        "T_MISMATCH": r".*"  
     }
 
     def __init__(self):
@@ -88,9 +80,11 @@ class Lexer():
             elif tokenType == "T_COMMENT":
                     lineNumber += lexeme.count("\n")
                     lineStart = tc.end()
+            #elif tokenType == "T_EOF":
+            #    return Token(tokenType, lexeme, lineNumber, column)
             elif tokenType == "T_MISMATCH":
-                print(f'Unexpected character {lexeme!r} on line {lineNumber}')
-                #raise SyntaxtError(f'Unexpected character {lexeme!r} on line {lineNumber}')
+                raise CritterParseError(f'Error parsing critter program. Read: "{lexeme}" at line {lineNumber} column {column}.')
+                #print(f'Error parsing critter program. Read: "{lexeme}" at line {lineNumber} column {column}.')
             yield Token(tokenType, lexeme, lineNumber, column)
 
 

@@ -1,6 +1,7 @@
 POSTURE != 17 --> POSTURE := 17; // we are species 17!
 nearby[3] = 0 and ENERGY > 2500 --> bud;
 {ENERGY > SIZE * 400 and SIZE < 7} --> grow;
+blah
 ahead[1] < -1 and ENERGY < 500 * SIZE --> eat;
 // next line attacks only other species
 (ahead[1] / 10 mod 100) != 17 and ahead[1] > 0 --> attack;
