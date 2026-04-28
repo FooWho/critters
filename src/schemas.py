@@ -1,6 +1,8 @@
 from __future__ import annotations
-from typing import NamedTuple
-from parser import Condition, Command, Update, Action, Term, Expression
+from typing import NamedTuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from parser import Condition, Command, Update, Action, Term, Expression, Factor
 
 class Token(NamedTuple):
     tokenType: str|None
@@ -26,8 +28,13 @@ class RelationTuple(NamedTuple):
     relationalOperator: TokenLexeme
 
 class TermTuple(NamedTuple):
+    addOp: TokenLexeme|None
     term: Term
-    addOp: TokenLexeme
+
+class FactorTuple(NamedTuple):
+    mulOp: TokenLexeme|None
+    factor: Factor
+
 
 class CritterParseError(Exception):
     pass

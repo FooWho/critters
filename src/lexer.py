@@ -80,11 +80,9 @@ class Lexer():
             elif tokenType == "T_COMMENT":
                     lineNumber += lexeme.count("\n")
                     lineStart = tc.end()
-            #elif tokenType == "T_EOF":
-            #    return Token(tokenType, lexeme, lineNumber, column)
             elif tokenType == "T_MISMATCH":
                 raise CritterParseError(f'Error parsing critter program. Read: "{lexeme}" at line {lineNumber} column {column}.')
-                #print(f'Error parsing critter program. Read: "{lexeme}" at line {lineNumber} column {column}.')
+            cache = Token(tokenType, lexeme, lineNumber, column)
             yield Token(tokenType, lexeme, lineNumber, column)
 
 
