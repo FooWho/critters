@@ -68,7 +68,7 @@ class Command(ASTNode):
 
     def __init__(self) -> None:
         self.updates: list[Update] = []
-        self.action: Action = Action()
+        self.action: Action
 
 
 class Update(ASTNode):
@@ -114,13 +114,18 @@ class Expression(ASTNode):
             self.terms = terms
 
     def __repr__(self) -> str:
-        i: int = 0
-        j: int = 0
-        for term in self.terms:
-            for factor in term.term.factors:
-                print(f'term[{i}]: factor[{j}]: {factor.factor.number.tokenType}, {factor.factor.number.lexeme}')
-            i += 1
+        strRepr: str = ''
 
+        for term in self.terms:
+            if term.addOp:
+                strRepr += f'{term.addOp.lexeme}'
+            strRepr += f'{term.term}'
+
+
+        return strRepr
+
+
+   
     
     def addTerm(self, term: TermTuple) -> None:
         if not self.terms:
@@ -145,6 +150,16 @@ class Term(ASTNode):
                     raise ValueError('All joining facotrs must have a mulOp')
             self.factors = factors
 
+    def __repr__(self) -> str:
+        strRepr: str = ''
+
+        for factor in self.factors:
+            if factor.mulOp:
+                strRepr += f'{factor.mulOp.lexeme}'
+            strRepr += f'{factor.factor}'
+
+        return strRepr
+
     def addFactor(self, factor: FactorTuple) -> None:
         if not self.factors:
             if factor.mulOp is not None:
@@ -162,33 +177,44 @@ class Factor(ASTNode):
     def __init__(self, number: TokenLexeme|None = None) -> None:
         self.number: TokenLexeme|None = number
 
+    def __repr__(self) -> str:
+        strRepr: str = ''
+
+        if self.number:
+            strRepr = self.number.lexeme
+        return strRepr
 
 
 
 
 
 
-
-
-
-def parseExpression(token: Token, tokens: Iterator[Token]) -> Expression:
-    expression: Expression = Expression()
-
-    return expression
 
 
 class Parser():
     def __init__(self, tokens: Iterator[Token]) -> None:
         self.tokens: Iterator[Token] = tokens
-        self.token: Token|None = next(tokens, None)
+        self.current: Token|None = next(tokens, None)
+        self.lookAhead: Token|None = next(tokens, None)
+        
 
-    def nextToken(self) -> Token|None:
-        token = self.token
-        self.token = next(self.tokens, None)
-        return token
+    def peek(self) -> Token|None:
+        print(f'peek() was invoked. Current token is: {self.current}. Lookahead token is: {self.lookAhead}')
+        return self.lookAhead
+
     
     def currentToken(self) -> Token|None:
-        return self.token
+        print(f'currentToken() was invoked. Current token is: {self.current}. Lookahead token is: {self.lookAhead}')
+        return self.current
+    
+    def nextToken(self) -> Token|None:
+        print(f'nextToken() was invoked. Current token is: {self.current}. Lookahead token is: {self.lookAhead}')
+        tmpToken:Token|None = self.current
+        self.current = self.lookAhead
+        self.lookAhead = next(self.tokens, None)
+        print(f'nextToken() is returning {tmpToken}. Current token is: {self.current}. Lookahead token is: {self.lookAhead}')
+        return tmpToken
+
     
     def parseProgram(self) -> Program:
         program: Program = Program()
@@ -204,6 +230,7 @@ class Parser():
         condition: Condition
         command: Command
 
+        self.eatWhitespace()
         condition = self.parseCondition()
         command = self.parseCommand()
 
@@ -242,6 +269,7 @@ class Parser():
         relOp: TokenLexeme
 
         leftExpression = self.parseExpression()
+
         print(f'leftExpression: {leftExpression}')
 
 
@@ -269,6 +297,8 @@ class Parser():
         factor: Factor
         number: TokenLexeme
 
+        print(f'In parseFactor() self.currentToken() = {self.currentToken()}')
+        print('Calling parseNumber()')
         number = self.parseNumber()
         factor = Factor(number)
 
@@ -281,16 +311,42 @@ class Parser():
         token = self.currentToken()
         if not token or token.tokenType != 'T_NUMBER':
             raise CritterParseError("Error!")
-        token = self.nextToken()
-        if token:
-            tokenLexeme = TokenLexeme(token.tokenType, token.lexeme)
+
+        tokenLexeme = TokenLexeme(token.tokenType, token.lexeme)
         return tokenLexeme
 
-        return tokenLexeme
     
     def eatTokenLexeme(self, tokenLexeme: TokenLexeme) -> bool:
         return True
     
+    """
+    def eatWhitespace(self) -> None:
+        token: Token|None = self.currentToken()
+        print(f'eatWhitespace() was invoked. Current token is {self.currentToken()}')
+
+        while token and token.tokenType == 'T_WS':
+            token = self.nextToken() 
+        if self.currentToken():
+            print(f'eatWhitsepace() is exiting. Current token is {self.currentToken()}')
+        else:
+            print(f'eatWhitepace() is exiting. Current token is {self.currentToken()}')
+"""
+
+    def eatWhitespace(self) -> None:
+
+        token: Token|None
+
+        token = self.currentToken()
+
+        while token and token.tokenType == 'T_WS':
+            token = self.nextToken()
+        print(f'Leave eatWhitespace(). self.currentToken() = {self.currentToken()}')
+
+                
+
+                    
+
+
 
 
 

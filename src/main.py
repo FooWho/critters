@@ -12,8 +12,12 @@ def main(args: list[str]):
     factor: Factor
 
     lexer = Lexer()
-    tokens = lexer.tokenize("1 = 1 --> eat;")
+    tokens = lexer.tokenize("   1 = 1 --> eat;")
     parser = Parser(tokens)
+    while parser.currentToken():
+        print(f'***{parser.currentToken().tokenType}: {parser.currentToken().lexeme}')
+        parser.nextToken()
+    exit(1)
 
     program: Program = parser.parseProgram()
 
