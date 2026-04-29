@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import ClassVar, Iterable, Iterator
-from schemas import ConditionCommandTuple, TokenLexeme, TermTuple, RelationTuple, FactorTuple, Token
+from schemas import ConditionCommandTuple, TokenLexeme, TermTuple, RelationTuple, FactorTuple, Token, CritterParseError
 
 class ASTNode():
     _children: ClassVar[tuple[str, ...]] = ()
@@ -18,11 +18,7 @@ class Program(ASTNode):
     _children: ClassVar[tuple[str]] = ('rules',)
 
     def __init__(self, rules: list[Rule]|None = None) -> None:
-        self.rules: list[Rule] = []
-        if rules is not None:
-            self.rules = rules
-        else:
-            self.rules = []
+        self.rules: list[Rule] = rules or []
 
     def addRule(self, rule: Rule|None = None, 
                 conditionCommandTuple: ConditionCommandTuple|None = None) -> None:
@@ -41,7 +37,7 @@ class Rule(ASTNode):
     def __init__(self, conditionCommandTuple: ConditionCommandTuple|None = None) -> None:
         self.condition: Condition
         self.command: Command
-        if conditionCommandTuple is not None:
+        if conditionCommandTuple:
             self.condition = conditionCommandTuple.condition
             self.command = conditionCommandTuple.command
         else:
@@ -116,6 +112,15 @@ class Expression(ASTNode):
                 if term.addOp is None:
                     raise ValueError('All joining terms must have an addOp.')
             self.terms = terms
+
+    def __repr__(self) -> str:
+        i: int = 0
+        j: int = 0
+        for term in self.terms:
+            for factor in term.term.factors:
+                print(f'term[{i}]: factor[{j}]: {factor.factor.number.tokenType}, {factor.factor.number.lexeme}')
+            i += 1
+
     
     def addTerm(self, term: TermTuple) -> None:
         if not self.terms:
@@ -154,7 +159,7 @@ class Term(ASTNode):
 class Factor(ASTNode):
     _children: ClassVar[tuple[str, ...]] = ()
 
-    def __init__(self, number: TokenLexeme|None) -> None:
+    def __init__(self, number: TokenLexeme|None = None) -> None:
         self.number: TokenLexeme|None = number
 
 
@@ -166,17 +171,6 @@ class Factor(ASTNode):
 
 
 
-
-def parseRelation(token: Token, tokens: Iterator[Token]) -> Relation:
-    relation: Relation = Relation()
-    leftExpression: Expression = Expression()
-    rightExpression: Expression = Expression()
-    rel: TokenLexeme
-
-    leftExpression = parseExpression(token, tokens)
-
-    return relation
-
 def parseExpression(token: Token, tokens: Iterator[Token]) -> Expression:
     expression: Expression = Expression()
 
@@ -186,12 +180,12 @@ def parseExpression(token: Token, tokens: Iterator[Token]) -> Expression:
 class Parser():
     def __init__(self, tokens: Iterator[Token]) -> None:
         self.tokens: Iterator[Token] = tokens
-        self.token:Token|None = None
-        self.token = self.nextToken()
-      
+        self.token: Token|None = next(tokens, None)
+
     def nextToken(self) -> Token|None:
+        token = self.token
         self.token = next(self.tokens, None)
-        return self.token
+        return token
     
     def currentToken(self) -> Token|None:
         return self.token
@@ -210,7 +204,8 @@ class Parser():
         condition: Condition
         command: Command
 
-        #condition = parseCondition()
+        condition = self.parseCondition()
+        command = self.parseCommand()
 
         return rule
     
@@ -220,18 +215,81 @@ class Parser():
         conjunction: Conjunction = Conjunction()
 
         # A Condition may have a list of conjunctions, for now, we will assume 1 and fix later
-        #conjunction = parseConjunction()
+        conjunction = self.parseConjunction()
 
         return condition
     
-    def parseConjunction(token: Token, tokens: Iterator[Token]) -> Conjunction:
-    conjunction: Conjunction = Conjunction()
-    relation: Relation = Relation()
+    
+    def parseCommand(self) -> Command:
+        command: Command = Command()
 
-    # A Conjunction may have a list of relations,  for now assume one and fix later
-    relation = parseRelation(token, tokens)
 
-    return conjunction
+        return command
+    
+    def parseConjunction(self) -> Conjunction:
+        conjunction: Conjunction = Conjunction()
+        relation: Relation = Relation()
+
+        # A Conjunction may have a list of relations,  for now assume one and fix later
+        relation = self.parseRelation()
+
+        return conjunction
+    
+    def parseRelation(self) -> Relation:
+        relation: Relation = Relation()
+        leftExpression: Expression
+        rightExpression: Expression
+        relOp: TokenLexeme
+
+        leftExpression = self.parseExpression()
+        print(f'leftExpression: {leftExpression}')
+
+
+        return relation
+    
+    def parseExpression(self) -> Expression:
+        expression: Expression = Expression()
+        term: Term
+
+        term = self.parseTerm()
+        expression.addTerm(TermTuple(None, term))
+
+        return expression
+    
+    def parseTerm(self) -> Term:
+        term: Term = Term()
+        factor: Factor
+
+        factor = self.parseFactor()
+        term.addFactor(FactorTuple(None, factor))
+
+        return term
+    
+    def parseFactor(self) -> Factor:
+        factor: Factor
+        number: TokenLexeme
+
+        number = self.parseNumber()
+        factor = Factor(number)
+
+        return factor
+    
+    def parseNumber(self) -> TokenLexeme:
+        token: Token|None
+        tokenLexeme: TokenLexeme = TokenLexeme(None, '')
+
+        token = self.currentToken()
+        if not token or token.tokenType != 'T_NUMBER':
+            raise CritterParseError("Error!")
+        token = self.nextToken()
+        if token:
+            tokenLexeme = TokenLexeme(token.tokenType, token.lexeme)
+        return tokenLexeme
+
+        return tokenLexeme
+    
+    def eatTokenLexeme(self, tokenLexeme: TokenLexeme) -> bool:
+        return True
     
 
 

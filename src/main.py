@@ -15,15 +15,9 @@ def main(args: list[str]):
     tokens = lexer.tokenize("1 = 1 --> eat;")
     parser = Parser(tokens)
 
-    token = parser.nextToken()
-    while token is not None:
-        print(f'The current token is: {parser.currentToken()}')
-        print(f'{token}')
-        token = parser.nextToken()
+    program: Program = parser.parseProgram()
 
 
-
-    program: Program = Program()
     rule: Rule = Rule()
     condition: Condition = Condition()
     command: Command = Command()
