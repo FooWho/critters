@@ -22,9 +22,9 @@ class Program(ASTNode):
 
     def addRule(self, rule: Rule|None = None, 
                 conditionCommandTuple: ConditionCommandTuple|None = None) -> None:
-        if rule is not None and conditionCommandTuple is None:
+        if rule and not conditionCommandTuple:
             self.rules.append(rule)
-        elif rule is None and conditionCommandTuple is not None:
+        elif not rule and conditionCommandTuple:
             self.rules.append(Rule(conditionCommandTuple))
         else:
             raise ValueError('Invalid arguments: Provide either a "rule" or both a'
@@ -53,11 +53,7 @@ class Condition(ASTNode):
     _children: ClassVar[tuple[str]] = ('conjunctions',)
     
     def __init__(self, conjunctions: list[Conjunction]|None = None) -> None:
-        self.conjunctions: list[Conjunction] = []
-        if conjunctions is not None:
-            self.conjunctions = conjunctions
-        else:
-            self.conjunctions = []
+        self.conjunctions: list[Conjunction] = conjunctions or []
 
     def addConjunction(self, conjunction: Conjunction) -> None:
         self.conjunctions.append(conjunction)
@@ -82,50 +78,51 @@ class Conjunction(ASTNode):
     _children: ClassVar[tuple[str]] = ('relations',)
 
     def __init(self, relations: list[Relation]|None = None) -> None:
-        self.relations: list[Relation] = []
-        if relations is not None:
-            self.relations = relations
+        self.relations: list[Relation] = relations or []
+
 
 class Relation(ASTNode):
     _children: ClassVar[tuple[str, str]] = ('leftExpression', 'rightExpression')
 
     def __init__(self, relationTuple: RelationTuple|None = None) -> None:
-        self.leftExpression: Expression|None = None
-        self.rightExpression: Expression|None = None
-        self.relationalOperator: TokenLexeme|None = None
+        self.leftExpression: Expression
+        self.rightExpression: Expression
+        self.relationalOperator: TokenLexeme
 
-        if relationTuple is not None:
+        if relationTuple:
             self.leftExpression = relationTuple.leftExpression
             self.rightExpression = relationTuple.rightExpression
             self.relationalOperator = relationTuple.relationalOperator
+        else:
+            self.leftExpression = Expression([])
+            self.rightExpression = Expression([])
+            self.relationalOperator = TokenLexeme('T_NONE', '')
+
 
 
 class Expression(ASTNode):
     _children: ClassVar[tuple[str]] = ('terms',)
 
     def __init__(self, terms: list[TermTuple]|None = None) -> None:
-        self.terms: list[TermTuple] = []
-        if terms is not None:
-            if terms[0].addOp is not None:
-                raise ValueError('First term must not have addOp')
-            for term in terms[1:]:
-                if term.addOp is None:
-                    raise ValueError('All joining terms must have an addOp.')
-            self.terms = terms
+        self.terms: list[TermTuple] = terms or []
+
+        for term in self.terms[0:1]:
+            if term.addOp:
+                raise ValueError('First term must not have an addOp')
+        for term in self.terms[1:]:
+            if not term.addOp:
+                raise ValueError('All joining terms must have an addOp.')       
 
     def __repr__(self) -> str:
-        strRepr: str = ''
+        tmp: str = ''
 
-        for term in self.terms:
-            if term.addOp:
-                strRepr += f'{term.addOp.lexeme}'
-            strRepr += f'{term.term}'
+        for term in self.terms[0:1]:
+            tmp += str(term)
+        for term in self.terms[1:]:
+            tmp += term.addOp.lexeme
+            tmp += str(term)
 
-
-        return strRepr
-
-
-   
+        return tmp
     
     def addTerm(self, term: TermTuple) -> None:
         if not self.terms:
@@ -141,24 +138,25 @@ class Term(ASTNode):
     _children: ClassVar[tuple[str]] = ('factors',)
 
     def __init__(self, factors: list[FactorTuple]|None = None) -> None:
-        self.factors:list[FactorTuple] = []
-        if factors is not None:
-            if factors[0].mulOp is not None:
+        self.factors:list[FactorTuple] = factors or []
+
+        for factor in self.factors[0:1]:
+            if factor.mulOp:
                 raise ValueError('First factor must not have mulOp')
-            for factor in factors[1:]:
-                if factor.mulOp is None:
-                    raise ValueError('All joining facotrs must have a mulOp')
-            self.factors = factors
+        for factor in self.factors[1:]:
+            if not factor.mulOp:
+                raise ValueError('All joining facotrs must have a mulOp')
 
     def __repr__(self) -> str:
-        strRepr: str = ''
+        tmp:str = ''
+        for factor in self.factors[0:1]:
+            tmp += str(factor.factor)
+        for factor in self.factors[1:]:
+            tmp += factor.mulOp.lexeme
+            tmp += str(factor.factor)
 
-        for factor in self.factors:
-            if factor.mulOp:
-                strRepr += f'{factor.mulOp.lexeme}'
-            strRepr += f'{factor.factor}'
+        return tmp
 
-        return strRepr
 
     def addFactor(self, factor: FactorTuple) -> None:
         if not self.factors:
@@ -175,53 +173,32 @@ class Factor(ASTNode):
     _children: ClassVar[tuple[str, ...]] = ()
 
     def __init__(self, number: TokenLexeme|None = None) -> None:
-        self.number: TokenLexeme|None = number
+        self.number: TokenLexeme = number or TokenLexeme('T_NONE', ' ')
 
     def __repr__(self) -> str:
-        strRepr: str = ''
-
-        if self.number:
-            strRepr = self.number.lexeme
-        return strRepr
-
-
-
-
-
-
+        return self.number.lexeme
 
 
 class Parser():
     def __init__(self, tokens: Iterator[Token]) -> None:
         self.tokens: Iterator[Token] = tokens
         self.current: Token|None = next(tokens, None)
-        self.lookAhead: Token|None = next(tokens, None)
-        
 
+    def getToken(self) -> Token|None:
+        token = self.token
+        self.token = next(self.tokens, None)
+        return token
+    
     def peek(self) -> Token|None:
-        print(f'peek() was invoked. Current token is: {self.current}. Lookahead token is: {self.lookAhead}')
-        return self.lookAhead
-
-    
-    def currentToken(self) -> Token|None:
-        print(f'currentToken() was invoked. Current token is: {self.current}. Lookahead token is: {self.lookAhead}')
-        return self.current
-    
-    def nextToken(self) -> Token|None:
-        print(f'nextToken() was invoked. Current token is: {self.current}. Lookahead token is: {self.lookAhead}')
-        tmpToken:Token|None = self.current
-        self.current = self.lookAhead
-        self.lookAhead = next(self.tokens, None)
-        print(f'nextToken() is returning {tmpToken}. Current token is: {self.current}. Lookahead token is: {self.lookAhead}')
-        return tmpToken
-
+        return self.token
     
     def parseProgram(self) -> Program:
         program: Program = Program()
-        token: Token|None = self.currentToken()
+        token: Token|None = self.peek()
 
         while token is not None:
             program.addRule(self.parseRule())
+            token = self.getToken()
 
         return program
 
@@ -306,48 +283,24 @@ class Parser():
     
     def parseNumber(self) -> TokenLexeme:
         token: Token|None
-        tokenLexeme: TokenLexeme = TokenLexeme(None, '')
+        tokenLexeme: TokenLexeme = TokenLexeme('T_NONE', '')
 
-        token = self.currentToken()
+        token = self.peek()
         if not token or token.tokenType != 'T_NUMBER':
             raise CritterParseError("Error!")
-
-        tokenLexeme = TokenLexeme(token.tokenType, token.lexeme)
+        else:
+            tokenLexeme = TokenLexeme(token.tokenType, token.lexeme)
         return tokenLexeme
 
     
-    def eatTokenLexeme(self, tokenLexeme: TokenLexeme) -> bool:
-        return True
+    def eatWhitespace(self) -> None:
+
+        token: Token|None = self.peek()
+
+        while token and token.tokenType == 'T_WS':
+            token = self.getToken()
+        print(f'Leave eatWhitespace(). self.currentToken() = {self.peek()}')
     
-    """
-    def eatWhitespace(self) -> None:
-        token: Token|None = self.currentToken()
-        print(f'eatWhitespace() was invoked. Current token is {self.currentToken()}')
-
-        while token and token.tokenType == 'T_WS':
-            token = self.nextToken() 
-        if self.currentToken():
-            print(f'eatWhitsepace() is exiting. Current token is {self.currentToken()}')
-        else:
-            print(f'eatWhitepace() is exiting. Current token is {self.currentToken()}')
-"""
-
-    def eatWhitespace(self) -> None:
-
-        token: Token|None
-
-        token = self.currentToken()
-
-        while token and token.tokenType == 'T_WS':
-            token = self.nextToken()
-        print(f'Leave eatWhitespace(). self.currentToken() = {self.currentToken()}')
-
-                
-
-                    
-
-
-
 
 
 

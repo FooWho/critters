@@ -2,7 +2,7 @@ import sys
 from typing import Iterator
 from lexer import Lexer, Token
 from parser import Parser, Program, Rule, Condition, Command, Conjunction, Relation, Expression, Term, Factor
-from schemas import ConditionCommandTuple, TokenLexeme
+from schemas import ConditionCommandTuple, TokenLexeme, CritterParseError
 
 def main(args: list[str]):
     
@@ -12,12 +12,8 @@ def main(args: list[str]):
     factor: Factor
 
     lexer = Lexer()
-    tokens = lexer.tokenize("   1 = 1 --> eat;")
+    tokens = lexer.tokenize('   1 = 1 --> eat;')
     parser = Parser(tokens)
-    while parser.currentToken():
-        print(f'***{parser.currentToken().tokenType}: {parser.currentToken().lexeme}')
-        parser.nextToken()
-    exit(1)
 
     program: Program = parser.parseProgram()
 

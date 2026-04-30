@@ -5,13 +5,13 @@ if TYPE_CHECKING:
     from parser import Condition, Command, Update, Action, Term, Expression, Factor
 
 class Token(NamedTuple):
-    tokenType: str|None
+    tokenType: str
     lexeme: str
     line: int
     column: int
 
 class TokenLexeme(NamedTuple):
-    tokenType: str|None
+    tokenType: str
     lexeme: str
 
 class ConditionCommandTuple(NamedTuple):
@@ -28,11 +28,11 @@ class RelationTuple(NamedTuple):
     relationalOperator: TokenLexeme
 
 class TermTuple(NamedTuple):
-    addOp: TokenLexeme|None
+    addOp: TokenLexeme
     term: Term
 
 class FactorTuple(NamedTuple):
-    mulOp: TokenLexeme|None
+    mulOp: TokenLexeme
     factor: Factor
 
 
