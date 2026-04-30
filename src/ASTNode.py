@@ -107,13 +107,7 @@ class Expression(ASTNode):
                 raise ValueError('All joining terms must have an addOp.')       
 
     def __repr__(self) -> str:
-        tmp: str = ''
-
-        for term in self.terms[0:1]:
-            tmp += str(term.term)
-        for term in self.terms[1:]:
-            tmp += term.addOp.lexeme
-            tmp += str(term.term)
+        tmp: str = ''  
 
         return tmp
     
@@ -122,40 +116,30 @@ class Expression(ASTNode):
         
 
 class Term(ASTNode):
-    _children: ClassVar[tuple[str]] = ('factors',)
+    _children: ClassVar[tuple[str, str]] = ('addOp', 'factors')
 
-    def __init__(self, factors: list[Factor]|None = None, mulOp: TokenLexeme|None = None) -> None:
+    def __init__(self, factors: list[Factor]|None = None, 
+                 addOp: TokenLexeme|None = None) -> None:
         self.factors:list[Factor] = factors or []
-        self.mulOp: TokenLexeme = mulOp or TokenLexeme('T_NONE', '')
+        self.addOp: TokenLexeme = addOp or TokenLexeme('T_NONE', '')
 
 
     def __repr__(self) -> str:
         tmp:str = ''
-        for factor in self.factors[0:1]:
-            tmp += str(factor.factor)
-        for factor in self.factors[1:]:
-            tmp += factor.mulOp.lexeme
-            tmp += str(factor.factor)
 
         return tmp
 
 
     def addFactor(self, factor: Factor) -> None:
-        if not self.factors:
-            if factor.mulOp.tokenType != 'T_NONE':
-                raise ValueError('First factor must not have mulOp')
-        else:
-            if factor.mulOp.tokenType != 'T_MULOP':
-                raise ValueError('All joining factors must have a mulOp')
         self.factors.append(factor)
             
-
 
 class Factor(ASTNode):
     _children: ClassVar[tuple[str, ...]] = ()
 
-    def __init__(self, number: TokenLexeme|None = None) -> None:
+    def __init__(self, number: TokenLexeme|None = None, mulOp: TokenLexeme|None = None) -> None:
         self.number: TokenLexeme = number or TokenLexeme('T_NONE', ' ')
+        self.mulOp: TokenLexeme = mulOp or TokenLexeme('T_NONE', '')
 
     def __repr__(self) -> str:
-        return self.number.lexeme
+        return self.mulOp.lexeme + ' ' + self.number.lexeme

@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import ClassVar, Iterable, Iterator
-from schemas import ConditionCommandTuple, TokenLexeme, TermTuple, RelationTuple, FactorTuple, Token, CritterParseError
+from schemas import Token, CritterParseError, TokenLexeme
+from ASTNode import Program, Rule, Condition, Command, Conjunction, Relation, Expression, Term, Factor
 
 
 
@@ -72,7 +73,6 @@ class Parser():
         leftExpression: Expression
         relOp: TokenLexeme
         rightExpression: Expression
-        
 
         leftExpression = self.parseExpression(token)
         nextToken: Token|None = self.getToken()
@@ -89,33 +89,36 @@ class Parser():
         rightExpression = self.parseExpression(token)     
 
 
-        return Relation(RelationTuple(leftExpression, rightExpression, relOp))
+        return Relation(leftExpression, rightExpression, relOp)
     
     def parseExpression(self, token: Token) -> Expression:
         expression: Expression = Expression()
         term: Term
 
         term = self.parseTerm(token)
-        expression.addTerm(TermTuple(TokenLexeme('T_NONE', ''), term))
+        expression.addTerm(term)
 
         return expression
     
     def parseTerm(self, token: Token) -> Term:
         term: Term = Term()
+        addOp: TokenLexeme = TokenLexeme('T_NONE', '')
         factor: Factor
 
+        if token.tokenType == 'T_ADDOP':
+            addOp = TokenLexeme(token.tokenType, token.lexeme)
+            tmpToken = self.getToken()
+            if tmpToken:
+                token = tmpToken
         factor = self.parseFactor(token)
-        term.addFactor(FactorTuple(TokenLexeme('T_NONE', ''), factor))
-
+        term.addFactor(factor)
         return term
     
     def parseFactor(self, token: Token) -> Factor:
-        factor: Factor
-        number: TokenLexeme
+        number: Factor
+        mulOp: TokenLexeme
 
-        number = self.parseNumber(token)
-        factor = Factor(number)
-
+        factor = Factor(self.parseNumber(token))
         return factor
     
     def parseNumber(self, token: Token) -> TokenLexeme:
