@@ -98,6 +98,16 @@ class Relation(ASTNode):
             self.rightExpression = Expression([])
             self.relationalOperator = TokenLexeme('T_NONE', '')
 
+    def __repr__(self) -> str:
+        tmp: str = ''
+        tmp += str(self.leftExpression)
+        tmp += ' '
+        tmp += self.relationalOperator.lexeme
+        tmp += ' '
+        tmp += str(self.rightExpression)
+        return tmp
+
+
 
 
 class Expression(ASTNode):
@@ -107,10 +117,10 @@ class Expression(ASTNode):
         self.terms: list[TermTuple] = terms or []
 
         for term in self.terms[0:1]:
-            if term.addOp:
+            if term.addOp.tokenType != 'T_NONE':
                 raise ValueError('First term must not have an addOp')
         for term in self.terms[1:]:
-            if not term.addOp:
+            if term.addOp.tokenType != 'T_ADDOP':
                 raise ValueError('All joining terms must have an addOp.')       
 
     def __repr__(self) -> str:
@@ -126,10 +136,10 @@ class Expression(ASTNode):
     
     def addTerm(self, term: TermTuple) -> None:
         if not self.terms:
-            if term.addOp is not None:
+            if term.addOp.tokenType != 'T_NONE':
                 raise ValueError('First term must not have addOp')
         else:
-            if term.addOp is None:
+            if term.addOp.tokenType != 'T_ADDOP':
                 raise ValueError('All joining terms must have an addOp')
         self.terms.append(term)
         
@@ -141,10 +151,10 @@ class Term(ASTNode):
         self.factors:list[FactorTuple] = factors or []
 
         for factor in self.factors[0:1]:
-            if factor.mulOp:
+            if factor.mulOp.tokenType != 'T_NONE':
                 raise ValueError('First factor must not have mulOp')
         for factor in self.factors[1:]:
-            if not factor.mulOp:
+            if factor.mulOp.tokenType != 'T_MULOP':
                 raise ValueError('All joining facotrs must have a mulOp')
 
     def __repr__(self) -> str:
@@ -160,10 +170,10 @@ class Term(ASTNode):
 
     def addFactor(self, factor: FactorTuple) -> None:
         if not self.factors:
-            if factor.mulOp is not None:
+            if factor.mulOp.tokenType != 'T_NONE':
                 raise ValueError('First factor must not have mulOp')
         else:
-            if factor.mulOp is None:
+            if factor.mulOp.tokenType != 'T_MULOP':
                 raise ValueError('All joining factors must have a mulOp')
         self.factors.append(factor)
             
@@ -195,30 +205,32 @@ class Parser():
     def parseProgram(self) -> Program:
         program: Program = Program()
 
-        while self.peek() is not None:
-            program.addRule(self.parseRule())
+        token = self.getToken()
+
+        while token :
+            program.addRule(self.parseRule(token))
             self.getToken()
 
         return program
 
-    def parseRule(self) -> Rule:
+    def parseRule(self, token: Token) -> Rule:
         rule: Rule = Rule()
         condition: Condition
         command: Command
 
-        self.eatWhitespace()
-        condition = self.parseCondition()
+        #self.eatWhitespace()
+        condition = self.parseCondition(token)
         command = self.parseCommand()
 
         return rule
     
-    def parseCondition(self) -> Condition:
+    def parseCondition(self, token: Token) -> Condition:
         condition: Condition = Condition()
         conjunctions: list[Conjunction] = []
         conjunction: Conjunction = Conjunction()
 
         # A Condition may have a list of conjunctions, for now, we will assume 1 and fix later
-        conjunction = self.parseConjunction()
+        conjunction = self.parseConjunction(token)
 
         return condition
     
@@ -229,62 +241,71 @@ class Parser():
 
         return command
     
-    def parseConjunction(self) -> Conjunction:
+    def parseConjunction(self, token: Token) -> Conjunction:
         conjunction: Conjunction = Conjunction()
         relation: Relation = Relation()
 
         # A Conjunction may have a list of relations,  for now assume one and fix later
-        relation = self.parseRelation()
+        relation = self.parseRelation(token)
+
+        print(f'{str(relation)}')
 
         return conjunction
     
-    def parseRelation(self) -> Relation:
-        relation: Relation = Relation()
+    def parseRelation(self, token: Token) -> Relation:
         leftExpression: Expression
-        rightExpression: Expression
         relOp: TokenLexeme
+        rightExpression: Expression
+        
 
-        leftExpression = self.parseExpression()
+        leftExpression = self.parseExpression(token)
+        nextToken: Token|None = self.getToken()
+        if nextToken:
+            token = nextToken
+        else:
+            raise CritterParseError('Error: Exprected relational operator in expression, but got "None"')
+        relOp = TokenLexeme(token.tokenType, token.lexeme)
+        nextToken = self.getToken()
+        if nextToken:
+            token = nextToken
+        else:
+            raise CritterParseError('Error: Exprected relational operator in expression, but got "None"')
+        rightExpression = self.parseExpression(token)     
 
-        print(f'leftExpression: {leftExpression}')
 
-
-        return relation
+        return Relation(RelationTuple(leftExpression, rightExpression, relOp))
     
-    def parseExpression(self) -> Expression:
+    def parseExpression(self, token: Token) -> Expression:
         expression: Expression = Expression()
         term: Term
 
-        term = self.parseTerm()
+        term = self.parseTerm(token)
         expression.addTerm(TermTuple(TokenLexeme('T_NONE', ''), term))
 
         return expression
     
-    def parseTerm(self) -> Term:
+    def parseTerm(self, token: Token) -> Term:
         term: Term = Term()
         factor: Factor
 
-        factor = self.parseFactor()
-        term.addFactor(FactorTuple(None, factor))
+        factor = self.parseFactor(token)
+        term.addFactor(FactorTuple(TokenLexeme('T_NONE', ''), factor))
 
         return term
     
-    def parseFactor(self) -> Factor:
+    def parseFactor(self, token: Token) -> Factor:
         factor: Factor
         number: TokenLexeme
 
-        number = self.parseNumber()
+        number = self.parseNumber(token)
         factor = Factor(number)
 
         return factor
     
-    def parseNumber(self) -> TokenLexeme:
-        token: Token|None
-        tokenLexeme: TokenLexeme = TokenLexeme('T_NONE', '')
+    def parseNumber(self, token: Token) -> TokenLexeme:
 
-        token = self.peek()
-        if not token or token.tokenType != 'T_NUMBER':
-            raise CritterParseError("Error!")
+        if token.tokenType != 'T_NUMBER':
+            raise CritterParseError('Error!')
         else:
             tokenLexeme = TokenLexeme(token.tokenType, token.lexeme)
         return tokenLexeme
