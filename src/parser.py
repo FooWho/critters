@@ -185,20 +185,19 @@ class Parser():
         self.current: Token|None = next(tokens, None)
 
     def getToken(self) -> Token|None:
-        token = self.token
-        self.token = next(self.tokens, None)
+        token: Token|None = self.current
+        self.current = next(self.tokens, None)
         return token
     
     def peek(self) -> Token|None:
-        return self.token
+        return self.current
     
     def parseProgram(self) -> Program:
         program: Program = Program()
-        token: Token|None = self.peek()
 
-        while token is not None:
+        while self.peek() is not None:
             program.addRule(self.parseRule())
-            token = self.getToken()
+            self.getToken()
 
         return program
 
@@ -257,7 +256,7 @@ class Parser():
         term: Term
 
         term = self.parseTerm()
-        expression.addTerm(TermTuple(None, term))
+        expression.addTerm(TermTuple(TokenLexeme('T_NONE', ''), term))
 
         return expression
     
@@ -274,8 +273,6 @@ class Parser():
         factor: Factor
         number: TokenLexeme
 
-        print(f'In parseFactor() self.currentToken() = {self.currentToken()}')
-        print('Calling parseNumber()')
         number = self.parseNumber()
         factor = Factor(number)
 
@@ -294,12 +291,11 @@ class Parser():
 
     
     def eatWhitespace(self) -> None:
-
         token: Token|None = self.peek()
 
         while token and token.tokenType == 'T_WS':
             token = self.getToken()
-        print(f'Leave eatWhitespace(). self.currentToken() = {self.peek()}')
+            token = self.peek()
     
 
 
