@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import ClassVar, Iterable, Iterator
-from schemas import Token, CritterParseError, TokenLexeme
+from schemas import Token, CritterParseError, TokenLexeme, TermTuple, FactorTuple
 from ASTNode import Program, Rule, Condition, Command, Conjunction, Relation, Expression, Term, Factor
 
 
@@ -39,7 +39,7 @@ class Parser():
         condition = self.parseCondition(token)
         command = self.parseCommand()
 
-        return rule
+        return Rule(condition, command)
     
     def parseCondition(self, token: Token) -> Condition:
         condition: Condition = Condition()
@@ -88,33 +88,29 @@ class Parser():
             raise CritterParseError('Error: Exprected relational operator in expression, but got "None"')
         rightExpression = self.parseExpression(token)     
 
-
+        relation = Relation(leftExpression, rightExpression, relOp)
+        print(f'{str(relation)}')
         return Relation(leftExpression, rightExpression, relOp)
     
     def parseExpression(self, token: Token) -> Expression:
         expression: Expression = Expression()
-        term: Term
-
-        term = self.parseTerm(token)
-        expression.addTerm(term)
 
         return expression
     
-    def parseTerm(self, token: Token) -> Term:
-        term: Term = Term()
-        addOp: TokenLexeme = TokenLexeme('T_NONE', '')
-        factor: Factor
-
-        if token.tokenType == 'T_ADDOP':
-            addOp = TokenLexeme(token.tokenType, token.lexeme)
-            tmpToken = self.getToken()
-            if tmpToken:
-                token = tmpToken
-        factor = self.parseFactor(token)
-        term.addFactor(factor)
+    def parseTerms(self, token: Token) -> list[Term]:
+        terms: list[Term] = []
+  
+        while token.tokenType not in {'T_LESS', 'T_LEQU', 'T_EQU', 'T_GEQU', 'T_GREAT', 'T_NEQU'}:
+            if token.tokenType == 'T_ADDOP':
+                addOp = TokenLexeme(token.tokenType, token.lexeme)
+                tmpToken = self.getToken()
+                if tmpToken:
+                    token = tmpToken
+            factors = self.parseFactors(token)
+            terms.append(Term(fac))
         return term
     
-    def parseFactor(self, token: Token) -> Factor:
+    def parseFactors(self, token: Token) -> list[Factor]:
         number: Factor
         mulOp: TokenLexeme
 

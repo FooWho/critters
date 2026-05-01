@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import ClassVar, Iterable
-from schemas import TokenLexeme
+from schemas import TokenLexeme, FactorTuple, TermTuple
 
 class ASTNode():
     _children: ClassVar[tuple[str, ...]] = ()
@@ -88,7 +88,6 @@ class Relation(ASTNode):
 
     def __repr__(self) -> str:
         tmp: str = ''
-
         tmp += str(self.leftExpression) + ' ' + self.relationalOperator.lexeme + ' ' + str(self.rightExpression)
         return tmp
 
@@ -96,8 +95,8 @@ class Relation(ASTNode):
 class Expression(ASTNode):
     _children: ClassVar[tuple[str]] = ('terms',)
 
-    def __init__(self, terms: list[Term]|None = None) -> None:
-        self.terms: list[Term] = terms or []
+    def __init__(self, terms: list[TermTuple]|None = None) -> None:
+        self.terms: list[TermTuple] = terms or []
 
         for term in self.terms[0:1]:
             if term.addOp.tokenType != 'T_NONE':
@@ -108,29 +107,30 @@ class Expression(ASTNode):
 
     def __repr__(self) -> str:
         tmp: str = ''  
-
+      
+        tmp += str(self.terms[0].term)
+        for term in self.terms[1:]:
+            tmp += ' ' + term.addOp.lexeme + ' ' + str(term.term)
         return tmp
     
-    def addTerm(self, term: Term) -> None:
+    def addTerm(self, term: TermTuple) -> None:
         self.terms.append(term)
         
 
 class Term(ASTNode):
-    _children: ClassVar[tuple[str, str]] = ('addOp', 'factors')
+    _children: ClassVar[tuple[str]] = ('factors',)
 
-    def __init__(self, factors: list[Factor]|None = None, 
-                 addOp: TokenLexeme|None = None) -> None:
-        self.factors:list[Factor] = factors or []
-        self.addOp: TokenLexeme = addOp or TokenLexeme('T_NONE', '')
-
+    def __init__(self, factors: list[FactorTuple]|None = None) -> None:
+        self.factors:list[FactorTuple] = factors or []
 
     def __repr__(self) -> str:
         tmp:str = ''
-
+        tmp += str(self.factors[0].factor)
+        for factor in self.factors[1:]:
+            tmp += ' ' + factor.mulOp.lexeme + ' ' + str(factor.factor)
         return tmp
 
-
-    def addFactor(self, factor: Factor) -> None:
+    def addFactor(self, factor: FactorTuple) -> None:
         self.factors.append(factor)
             
 
@@ -142,4 +142,8 @@ class Factor(ASTNode):
         self.mulOp: TokenLexeme = mulOp or TokenLexeme('T_NONE', '')
 
     def __repr__(self) -> str:
-        return self.mulOp.lexeme + ' ' + self.number.lexeme
+        tmp: str = ''
+        if self.mulOp.tokenType != 'T_NONE':
+            tmp += self.mulOp.lexeme + ' '
+        tmp += self.number.lexeme
+        return self.number.lexeme

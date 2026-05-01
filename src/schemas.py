@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import NamedTuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from parser import Condition, Command, Update, Action, Term, Expression, Factor
+    from ASTNode import Condition, Command, Update, Action, Term, Expression, Factor
 
 class Token(NamedTuple):
     tokenType: str
