@@ -95,27 +95,40 @@ class Parser():
     def parseExpression(self, token: Token) -> Expression:
         expression: Expression = Expression()
 
+        expression.addTerms(self.parseTerms(token))
+
         return expression
     
-    def parseTerms(self, token: Token) -> list[Term]:
-        terms: list[Term] = []
+    def parseTerms(self, token: Token) -> list[TermTuple]:
+        terms: list[TermTuple] = []
   
-        while token.tokenType not in {'T_LESS', 'T_LEQU', 'T_EQU', 'T_GEQU', 'T_GREAT', 'T_NEQU'}:
+        while token.tokenType not in {'T_LESS', 'T_LEQU', 'T_EQU', 'T_GEQU', 'T_GREAT', 'T_NEQU', 'T_COMM',}:
+            if token == self.peek():
+                self.getToken()
+            addOp: TokenLexeme = TokenLexeme('T_NONE', '')
             if token.tokenType == 'T_ADDOP':
                 addOp = TokenLexeme(token.tokenType, token.lexeme)
                 tmpToken = self.getToken()
                 if tmpToken:
                     token = tmpToken
-            factors = self.parseFactors(token)
-            terms.append(Term(fac))
-        return term
+            factorTupleList = self.parseFactors(token)
+            term = Term(factorTupleList)
+            terms.append(TermTuple(addOp, term))
+            tmpToken = self.peek()
+            if tmpToken:
+                token = tmpToken
+            else:
+                raise CritterParseError('Error!')
+        
+        return terms
     
-    def parseFactors(self, token: Token) -> list[Factor]:
+    def parseFactors(self, token: Token) -> list[FactorTuple]:
         number: Factor
         mulOp: TokenLexeme
 
+        mulOp = TokenLexeme('T_NONE', '')
         factor = Factor(self.parseNumber(token))
-        return factor
+        return [FactorTuple(mulOp, factor)]
     
     def parseNumber(self, token: Token) -> TokenLexeme:
 

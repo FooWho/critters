@@ -115,6 +115,10 @@ class Expression(ASTNode):
     
     def addTerm(self, term: TermTuple) -> None:
         self.terms.append(term)
+
+    def addTerms(self, terms: list[TermTuple]) -> None:
+        for term in terms:
+            self.addTerm(term)
         
 
 class Term(ASTNode):

@@ -12,7 +12,7 @@ def main(args: list[str]):
     factor: Factor
 
     lexer = Lexer()
-    tokens = lexer.tokenize('1 = 1 --> eat;')
+    tokens = lexer.tokenize('12 >= 8 --> eat;')
     parser = Parser(tokens)
 
     program: Program = parser.parseProgram()
